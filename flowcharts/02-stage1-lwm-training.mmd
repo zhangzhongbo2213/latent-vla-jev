@@ -1,0 +1,22 @@
+flowchart LR
+    subgraph DATA[子任务片段训练数据]
+        CURRENT[当前帧 I_t]
+        TEXT[子任务描述 q_j]
+        END[子任务最后一帧 I_end]
+    end
+
+    CURRENT --> VE[Vision Encoder<br/>共享或冻结]
+    VE --> Z[当前视觉特征 z_t]
+
+    TEXT --> TE[Text Encoder]
+    TE --> C[子任务语义特征 c_j]
+
+    Z --> LWM[Latent World Model]
+    C --> LWM
+    LWM --> PRED[预测子任务终点特征<br/>z_hat_terminal]
+
+    END --> VEGT[Vision Encoder<br/>同一特征空间]
+    VEGT --> GT[真实子任务终点特征<br/>z_terminal]
+
+    PRED --> LOSS[终点特征损失]
+    GT --> LOSS
