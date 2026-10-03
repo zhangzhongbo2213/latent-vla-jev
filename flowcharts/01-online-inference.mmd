@@ -1,0 +1,56 @@
+flowchart TB
+    subgraph INIT[子任务初始化：每个子任务执行一次]
+        TASK[总任务指令] --> VLM[VLM]
+        HIST[已完成子任务历史] --> VLM
+        IMG0[子任务开始图像 I_start] --> VLM
+
+        VLM --> SUB[当前子任务描述与完成条件]
+        SUB --> TE[Text Encoder]
+        TE --> C[子任务语义特征 c_j]
+
+        IMG0 --> VE0[Vision Encoder]
+        VE0 --> Z0[当前视觉特征 z_start]
+
+        Z0 --> LWM[Latent World Model<br/>子任务终点预测]
+        C --> LWM
+        LWM --> GOAL[预测终点潜特征<br/>z_hat_terminal_j]
+
+        RESET[PT_0 = 0] --> PT[当前进度 PT_t]
+    end
+
+    subgraph LOOP[子任务内部闭环：每个控制周期执行一次]
+        IMG[当前图像 I_t] --> VE[Vision Encoder]
+        VE --> Z[当前视觉特征 z_t]
+
+        STATE[机器人状态 s_t] --> RE[Robot Encoder]
+        RE --> R[机器人状态特征 r_t]
+
+        Z --> JEV[Decision JEV]
+        GOAL --> JEV
+        R --> JEV
+        PT --> JEV
+
+        JEV --> ACTION[离散 Action Tokens]
+        JEV --> PTNEXT[预测下一步 PT_(t+1)]
+        JEV --> FTNEXT[预测下一步 FT_(t+1)]
+
+        ACTION --> DECODE[动作 Token 解码]
+        DECODE --> EE[EEPose Delta]
+        EE --> IK[逆运动学 IK]
+        IK --> COMMAND[关节控制指令]
+        COMMAND --> ROBOT[机器人执行]
+
+        ROBOT --> OBS[获得下一帧图像与状态]
+        OBS --> IMG
+        OBS --> STATE
+
+        PTNEXT --> PT
+        FTNEXT --> GATE{FT = 1?}
+    end
+
+    GATE -- 否：继续当前子任务 --> JEV
+    GATE -- 是：当前子任务完成 --> UPDATE[记录已完成子任务<br/>重置 PT = 0]
+    UPDATE --> HIST
+    UPDATE --> VLM
+    UPDATE --> IMG0
+    UPDATE --> RESET
