@@ -24,7 +24,7 @@ flowchart TB
         Z0 --> LWM[Latent World Model<br/>子任务终点预测]
         C --> LWM
         LWM --> GOAL[预测终点潜特征<br/>z_hat_terminal_j]
-        RESET[PT_0 = 0] --> PT[当前进度 PT_t]
+        RESET[PT 初始值为 0] --> PT[当前进度 PT]
     end
 
     subgraph LOOP[子任务内部闭环：每个控制周期执行一次]
@@ -37,7 +37,7 @@ flowchart TB
         R --> JEV
         PT --> JEV
         JEV --> ACTION[并行离散 Action Tokens<br/>每个 token=一次完整6D EEPose delta]
-        JEV --> PTNEXT[预测执行后 PT_(t+1...t+H)]
+        JEV --> PTNEXT[预测执行后的 PT 序列]
         JEV --> FTCURRENT[判断当前观测 FT_t]
         ACTION --> DECODE[动作 Token 解码]
         DECODE --> EE[EEPose Delta]
@@ -49,7 +49,7 @@ flowchart TB
         OBS --> STATE
         PTNEXT --> PTUPDATE[仅对实际执行的动作前缀更新 PT]
         PTUPDATE --> PT
-        FTCURRENT --> GATE{FT_t = 1?}
+        FTCURRENT --> GATE{当前 FT 为 1?}
     end
 
     GATE -- 否：继续当前子任务 --> JEV
@@ -90,7 +90,7 @@ flowchart LR
         IMAGE[当前图像 I_t]
         STATE[机器人状态 s_t]
         TEXT[子任务描述 q_j]
-        PTLABEL[当前进度标签<br/>PT_t = k / K_j]
+        PTLABEL[当前进度标签<br/>PT 为 k / K]
     end
     IMAGE --> VE[Vision Encoder]
     VE --> Z[当前视觉特征 z_t]
@@ -106,10 +106,10 @@ flowchart LR
     R --> JEV
     PTLABEL --> JEV
     JEV --> ACTION[预测并行 Action Tokens<br/>每个 token=完整6D EEPose delta]
-    JEV --> PREDPT[预测执行后 PT_(t+1...t+H)]
+    JEV --> PREDPT[预测执行后的 PT 序列]
     JEV --> PREDFT[判断当前观测 FT_t]
     ACTION --> ACTIONGT[真实 Action Token]
-    PREDPT --> PTGT[真实 PT_(t+1)]
+    PREDPT --> PTGT[真实执行后 PT]
     PREDFT --> FTGT[真实当前状态 FT_t]
     ACTIONGT --> LOSS[联合损失]
     PTGT --> LOSS

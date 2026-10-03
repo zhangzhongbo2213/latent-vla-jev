@@ -3,7 +3,7 @@ flowchart LR
         IMAGE[当前图像 I_t]
         STATE[机器人状态 s_t]
         TEXT[子任务描述 q_j]
-        PTLABEL[当前进度标签<br/>PT_t = k / K_j]
+        PTLABEL[当前进度标签<br/>PT 为 k / K]
     end
 
     IMAGE --> VE[Vision Encoder]
@@ -25,11 +25,11 @@ flowchart LR
     PTLABEL --> JEV
 
     JEV --> ACTION[预测并行 Action Tokens<br/>每个 token=完整6D EEPose delta]
-    JEV --> PREDPT[预测执行后 PT_(t+1...t+H)]
+    JEV --> PREDPT[预测执行后的 PT 序列]
     JEV --> PREDFT[判断当前观测 FT_t]
 
     ACTION --> ACTIONGT[真实 Action Token]
-    PREDPT --> PTGT[真实 PT_(t+1)]
+    PREDPT --> PTGT[真实执行后 PT]
     PREDFT --> FTGT[真实当前状态 FT_t]
 
     ACTIONGT --> LOSS[联合损失]
