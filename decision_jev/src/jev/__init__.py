@@ -8,9 +8,19 @@ from .data import (
 from .losses import jev_loss
 from .model import DecisionJEV, JEVConfig
 from .policy import ActionPlan, SubtaskController
+from .inference import (
+    FeatureProvider, InferencePipeline, InferenceResult, RobotInterface,
+    RobotObservation, SubtaskProposal, SubtaskResult, VLMInterface,
+    VLMPlaceholder,
+)
 
 __all__ = [
-    "ActionPlan", "DecisionJEV", "FeatureCache", "JEVConfig",
+    "ActionPlan", "DecisionJEV", "FeatureCache", "FeatureProvider",
+    "InferencePipeline", "InferenceResult", "RobotInterface",
+    "JEVConfig",
+    "RobotObservation",
     "SubtaskController", "SubtaskDataset", "WholeActionCodebook",
-    "collate_batch", "jev_loss", "load_cache", "load_feature_cache", "save_cache",
+    "SubtaskProposal", "SubtaskResult", "VLMInterface", "VLMPlaceholder",
+    "collate_batch", "jev_loss",
+    "load_cache", "load_feature_cache", "save_cache",
 ]

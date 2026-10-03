@@ -294,7 +294,62 @@ controller.acknowledge(plan.plan_id, executed_steps=1)
 它只管理 LWM 终点缓存、短动作前缀、PT 更新和 FT 后的动作队列清空；机器人
 驱动、IK、安全检查与 VLM 调用由上层系统负责。
 
-## 7. 研究对照实验
+## 7. 端到端推理代码
+
+`src/jev/inference.py` 将在线闭环固定为以下顺序：
+
+```mermaid
+flowchart TB
+    A[总任务] --> B[VLM 生成子任务]
+    B --> C[冻结视觉和文本编码器]
+    C --> D[LWM 预测子任务终点 features]
+    D --> E[PT 初始化为零]
+    E --> F[JEV 读取当前观测和 PT]
+    F --> G[输出 action token 前缀]
+    G --> H[codebook 查表得到 6D EEPose delta]
+    H --> I[外部 IK 与安全检查]
+    I --> J[机器人执行]
+    J --> K[新观测并更新 PT]
+    K --> F
+    F --> L{FT 达标}
+    L -->|否| G
+    L -->|是| B
+```
+
+流程中的几个边界由接口明确表达：
+
+- `VLMInterface` 根据总任务、历史子任务和当前观测生成 `SubtaskProposal`；
+  返回 `None` 表示总任务结束。
+- `VLMPlaceholder` 是暂时的空实现，调用时会明确抛出 `NotImplementedError`，
+  不会在未接入 VLM 时虚构子任务并驱动机器人。
+- `FeatureProvider` 负责把图像和子任务文字转换到 LWM/JEV 使用的冻结特征空间。
+- LWM 在每个子任务开始时调用一次，输出的终点 features 缓存在
+  `SubtaskController` 中；控制循环不会重复预测终点。
+- JEV 可以输出多个并行动作 token，但 `InferencePipeline` 只执行配置的前缀，
+  然后等待新观测、重新规划，并通过 `acknowledge` 只提交实际执行的动作数。
+- `RobotInterface.execute_delta` 接收物理单位的 6D 增量。机器人适配器在这里完成
+  IK、关节限位、碰撞和可达性检查；这些型号相关逻辑不写入 JEV。
+
+最小接入示例：
+
+```python
+from jev import InferencePipeline, VLMPlaceholder
+
+# 用真实 VLM 类替换 VLMPlaceholder，并提供下列四个对象：
+# feature_provider、lwm、controller、robot。
+pipeline = InferencePipeline(
+    vlm=VLMPlaceholder(),
+    feature_provider=feature_provider,
+    lwm=lwm,
+    controller=controller,
+    robot=robot,
+)
+result = pipeline.run("把目标物体放到托盘中")
+```
+
+真实部署时只需让 VLM 实现 `predict_subtask`，其余闭环顺序和 PT/FT 语义保持不变。
+
+## 8. 研究对照实验
 
 实现完成后建议至少比较：
 
