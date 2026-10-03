@@ -1,0 +1,37 @@
+flowchart LR
+    subgraph INPUT[子任务内训练样本]
+        IMAGE[当前图像 I_t]
+        STATE[机器人状态 s_t]
+        TEXT[子任务描述 q_j]
+        PTLABEL[当前进度标签<br/>PT_t = k / K_j]
+    end
+
+    IMAGE --> VE[Vision Encoder]
+    VE --> Z[当前视觉特征 z_t]
+
+    TEXT --> TE[Text Encoder]
+    TE --> C[子任务语义特征 c_j]
+
+    Z --> LWM[预训练 Latent World Model]
+    C --> LWM
+    LWM --> GOAL[预测终点潜特征<br/>z_hat_terminal]
+
+    STATE --> RE[Robot Encoder]
+    RE --> R[机器人状态特征 r_t]
+
+    Z --> JEV[Decision JEV]
+    GOAL --> JEV
+    R --> JEV
+    PTLABEL --> JEV
+
+    JEV --> ACTION[预测 Action Token]
+    JEV --> PREDPT[预测 PT_(t+1)]
+    JEV --> PREDFT[预测 FT_(t+1)]
+
+    ACTION --> ACTIONGT[真实 Action Token]
+    PREDPT --> PTGT[真实 PT_(t+1)]
+    PREDFT --> FTGT[真实 FT_(t+1)]
+
+    ACTIONGT --> LOSS[联合损失]
+    PTGT --> LOSS
+    FTGT --> LOSS
