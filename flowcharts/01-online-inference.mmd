@@ -30,9 +30,9 @@ flowchart TB
         R --> JEV
         PT --> JEV
 
-        JEV --> ACTION[离散 Action Tokens]
-        JEV --> PTNEXT[预测下一步 PT_(t+1)]
-        JEV --> FTNEXT[预测下一步 FT_(t+1)]
+        JEV --> ACTION[并行离散 Action Tokens<br/>每个 token=一次完整6D EEPose delta]
+        JEV --> PTNEXT[预测执行后 PT_(t+1...t+H)]
+        JEV --> FTCURRENT[判断当前观测 FT_t]
 
         ACTION --> DECODE[动作 Token 解码]
         DECODE --> EE[EEPose Delta]
@@ -44,8 +44,9 @@ flowchart TB
         OBS --> IMG
         OBS --> STATE
 
-        PTNEXT --> PT
-        FTNEXT --> GATE{FT = 1?}
+        PTNEXT --> PTUPDATE[仅对实际执行的动作前缀更新 PT]
+        PTUPDATE --> PT
+        FTCURRENT --> GATE{FT_t = 1?}
     end
 
     GATE -- 否：继续当前子任务 --> JEV

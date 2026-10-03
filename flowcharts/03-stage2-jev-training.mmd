@@ -24,13 +24,13 @@ flowchart LR
     R --> JEV
     PTLABEL --> JEV
 
-    JEV --> ACTION[预测 Action Token]
-    JEV --> PREDPT[预测 PT_(t+1)]
-    JEV --> PREDFT[预测 FT_(t+1)]
+    JEV --> ACTION[预测并行 Action Tokens<br/>每个 token=完整6D EEPose delta]
+    JEV --> PREDPT[预测执行后 PT_(t+1...t+H)]
+    JEV --> PREDFT[判断当前观测 FT_t]
 
     ACTION --> ACTIONGT[真实 Action Token]
     PREDPT --> PTGT[真实 PT_(t+1)]
-    PREDFT --> FTGT[真实 FT_(t+1)]
+    PREDFT --> FTGT[真实当前状态 FT_t]
 
     ACTIONGT --> LOSS[联合损失]
     PTGT --> LOSS

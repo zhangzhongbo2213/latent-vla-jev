@@ -4,7 +4,7 @@
 
 1. 在线推理主流程：VLM 在子任务边界调用，Decision JEV 在子任务内部循环控制。
 2. Stage 1 训练流程：Latent World Model 预测子任务终点潜特征。
-3. Stage 2 训练流程：Decision JEV 根据当前状态、终点潜特征和 PT 预测动作、下一步 PT 与 FT。
+3. Stage 2 训练流程：Decision JEV 根据当前状态、终点潜特征和 PT 预测动作、执行后 PT，并判断当前观测是否完成（FT）。
 
 对应的 Mermaid 源文件位于 [`flowcharts/`](flowcharts/)。
 
@@ -36,9 +36,9 @@ flowchart TB
         GOAL --> JEV
         R --> JEV
         PT --> JEV
-        JEV --> ACTION[离散 Action Tokens]
-        JEV --> PTNEXT[预测下一步 PT_(t+1)]
-        JEV --> FTNEXT[预测下一步 FT_(t+1)]
+        JEV --> ACTION[并行离散 Action Tokens<br/>每个 token=一次完整6D EEPose delta]
+        JEV --> PTNEXT[预测执行后 PT_(t+1...t+H)]
+        JEV --> FTCURRENT[判断当前观测 FT_t]
         ACTION --> DECODE[动作 Token 解码]
         DECODE --> EE[EEPose Delta]
         EE --> IK[逆运动学 IK]
@@ -47,8 +47,9 @@ flowchart TB
         ROBOT --> OBS[获得下一帧图像与状态]
         OBS --> IMG
         OBS --> STATE
-        PTNEXT --> PT
-        FTNEXT --> GATE{FT = 1?}
+        PTNEXT --> PTUPDATE[仅对实际执行的动作前缀更新 PT]
+        PTUPDATE --> PT
+        FTCURRENT --> GATE{FT_t = 1?}
     end
 
     GATE -- 否：继续当前子任务 --> JEV
@@ -104,12 +105,12 @@ flowchart LR
     GOAL --> JEV
     R --> JEV
     PTLABEL --> JEV
-    JEV --> ACTION[预测 Action Token]
-    JEV --> PREDPT[预测 PT_(t+1)]
-    JEV --> PREDFT[预测 FT_(t+1)]
+    JEV --> ACTION[预测并行 Action Tokens<br/>每个 token=完整6D EEPose delta]
+    JEV --> PREDPT[预测执行后 PT_(t+1...t+H)]
+    JEV --> PREDFT[判断当前观测 FT_t]
     ACTION --> ACTIONGT[真实 Action Token]
     PREDPT --> PTGT[真实 PT_(t+1)]
-    PREDFT --> FTGT[真实 FT_(t+1)]
+    PREDFT --> FTGT[真实当前状态 FT_t]
     ACTIONGT --> LOSS[联合损失]
     PTGT --> LOSS
     FTGT --> LOSS
